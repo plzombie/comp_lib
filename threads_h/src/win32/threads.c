@@ -24,6 +24,7 @@ typedef struct {
 	int detached;
 } thread_arg_t;
 static unsigned __stdcall thrd_start_wrapper(void *arg);
+static void thrd_release(thread_arg_t *thread_arg);
 
 // Call once
 void call_once(once_flag *flag, void (* func)(void))
@@ -230,7 +231,7 @@ int thrd_join(thrd_t thr, int *res)
 	if(res)
 		*res = thread_arg->thrd_ret;
 
-	free(thread_arg);
+	thrd_release(thread_arg);
 
 	return thrd_success;
 }
@@ -315,7 +316,8 @@ void tss_delete(tss_t key)
 
 	if(tss_key < thread_arg->tss_vals_max) {
 		if(thread_arg->tss_vals[tss_key].used) {
-			thread_arg->tss_vals[tss_key].dtor(thread_arg->tss_vals[tss_key].val);
+			if(thread_arg->tss_vals[tss_key].dtor)
+				thread_arg->tss_vals[tss_key].dtor(thread_arg->tss_vals[tss_key].val);
 			thread_arg->tss_vals[tss_key].used = 0;
 		}
 	}
@@ -385,7 +387,21 @@ static unsigned __stdcall thrd_start_wrapper(void *arg)
 	thread_arg->thrd_ret = thread_arg->thrd_start(thread_arg->thrd_arg);
 
 	if(InterlockedCompareExchange((LONG *)(&(thread_arg->detached)), 1, 1) == 1)
-		free(thread_arg);
+		thrd_release(thread_arg);
 
 	return 0;
+}
+
+static void thrd_release(thread_arg_t *thread_arg)
+{
+	size_t tss_key;
+
+	for(tss_key = 0; tss_key < thread_arg->tss_vals_max; tss_key++) {
+		if(thread_arg->tss_vals[tss_key].used) {
+			if(thread_arg->tss_vals[tss_key].dtor)
+				thread_arg->tss_vals[tss_key].dtor(thread_arg->tss_vals[tss_key].val);
+		}
+	}
+
+	free(thread_arg);
 }
