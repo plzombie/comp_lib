@@ -47,7 +47,7 @@ int main(void)
 	if(thrd_create(&thr, thrd_start, 0) != thrd_success)
 		return EXIT_FAILURE;
 
-	if(thrd_join(&thr, &res) != thrd_success)
+	if(thrd_join(thr, &res) != thrd_success)
 		return EXIT_FAILURE;
 
 	return res;
