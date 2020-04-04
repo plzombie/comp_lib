@@ -149,8 +149,16 @@ int thrd_join(thrd_t thr, int *res)
 
 int thrd_sleep(const struct timespec *duration, struct timespec *remaining)
 {
-	(void)duration;
-	(void)remaining;
+	long long sleeptime;
+
+	sleeptime = duration->tv_sec*1000+duration->tv_nsec/1000000;
+
+	if(duration->tv_nsec % 1000000) sleeptime++;
+
+	Sleep(sleeptime); // Sleeps at less sleeptime ms
+
+	remaining->tv_sec = 0;
+	remaining->tv_nsec = 0;
 
 	return -2;
 }
