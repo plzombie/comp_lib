@@ -56,9 +56,9 @@ typedef int (* thrd_start_t)(void *);
 typedef unsigned int once_flag;
 
 enum {
-	mtx_plain,
-	mtx_recursive,
-	mtx_timed
+        mtx_plain = 0x1,
+        mtx_recursive = 0x2,
+        mtx_timed = 0x4
 };
 
 enum {
