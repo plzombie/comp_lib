@@ -72,7 +72,7 @@ enum {
 void call_once(once_flag *flag, void (* func)(void));
 
 int cnd_broadcast(cnd_t *cond);
-int cnd_destroy(cnd_t *cond);
+void cnd_destroy(cnd_t *cond);
 int cnd_init(cnd_t *cond);
 int cnd_signal(cnd_t *cond);
 int cnd_timedwait(cnd_t *restrict cond, mtx_t *restrict mtx, const struct timespec *restrict ts);
@@ -97,7 +97,7 @@ void thrd_exit(int res);
 void thrd_exit(int res);
 int thrd_join(thrd_t thr, int *res);
 int thrd_sleep(const struct timespec *duration, struct timespec *remaining);
-int thrd_yield(void);
+void thrd_yield(void);
 
 int tss_create(tss_t *key, tss_dtor_t dtor);
 void tss_delete(tss_t key);
