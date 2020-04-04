@@ -35,17 +35,18 @@ extern "C" {
 
 #include <time.h>
 
-//#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #define thread_local _Thread_local
-//#else
-//#define thread_local
-//#endif
+#elif defined(_MSC_VER)
+#define thread_local __declspec(thread)
+#else
+#define thread_local error
+#endif
 
 #define ONCE_FLAG_INIT 0
 
-//TODO: Set Next
-
-//#define TSS_DTOR_ITERATIONS
+//TODO: What is actually next define for?
+#define TSS_DTOR_ITERATIONS 1
 
 typedef void *cnd_t;
 typedef void *thrd_t;
