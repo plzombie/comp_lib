@@ -6,12 +6,15 @@
 #include <process.h>
 #include <stdlib.h>
 
+#include <stdio.h>
+
 static DWORD get_time_in_ms(const struct timespec * ts);
 typedef struct {
 	thrd_start_t thrd_start;
 	void *thrd_arg;
 	uintptr_t handle;
 	int thrd_ret;
+	int detached;
 } thread_arg_t;
 unsigned __stdcall thrd_start_wrapper(void *arg);
 
@@ -140,6 +143,7 @@ int thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 	thread_arg->thrd_arg = arg;
 	thread_arg->thrd_start = func;
 	thread_arg->thrd_ret = 0;
+	thread_arg->detached = 0;
 
 	thread_arg->handle = _beginthreadex(NULL, 0, thrd_start_wrapper, thread_arg, 0, NULL);
 	if(thread_arg->handle == 0) {
@@ -159,7 +163,18 @@ thrd_t thrd_current(void)
 
 int thrd_detach(thrd_t thr)
 {
-	(void)thr;
+	thread_arg_t *thread_arg;
+	HANDLE h;
+
+	thread_arg = thr;
+
+	h = (HANDLE)(thread_arg->handle);
+
+	if(InterlockedCompareExchange((LONG *)(&(thread_arg->detached)), 1, 0) == 0) {
+		CloseHandle(h);
+
+		return thrd_success;
+	}
 
 	return thrd_error;
 }
@@ -271,6 +286,9 @@ unsigned __stdcall thrd_start_wrapper(void *arg)
 	thread_arg = arg;
 
 	thread_arg->thrd_ret = thread_arg->thrd_start(thread_arg->thrd_arg);
+
+	if(InterlockedCompareExchange((LONG *)(&(thread_arg->detached)), 1, 1) == 1)
+		free(thread_arg);
 
 	return 0;
 }
