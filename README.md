@@ -1,6 +1,6 @@
-= My compatibility libraries
+# My compatibility libraries
 
-== Structure of directories
+## Structure of directories
 
 * library_name
 * library_name/BUILD_QMAKE - makefile for qmake
