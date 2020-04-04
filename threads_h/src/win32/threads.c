@@ -157,8 +157,10 @@ int thrd_sleep(const struct timespec *duration, struct timespec *remaining)
 
 	Sleep(sleeptime); // Sleeps at less sleeptime ms
 
-	remaining->tv_sec = 0;
-	remaining->tv_nsec = 0;
+	if(remaining) {
+		remaining->tv_sec = 0;
+		remaining->tv_nsec = 0;
+	}
 
 	return -2;
 }
