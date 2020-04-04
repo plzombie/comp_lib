@@ -60,11 +60,11 @@ int main(void)
 
 	for(i = 0; i < 1000; i++) {
 		thrd_join(thr[i], &res);
-		if(res != (int)(i+1))
-			exit(EXIT_FAILURE);
 	}
 
 	mtx_destroy(&mtx);
+
+	printf("%lld %lld\n", truesum, sum);
 
 	if(truesum != sum)
 		return EXIT_FAILURE;
