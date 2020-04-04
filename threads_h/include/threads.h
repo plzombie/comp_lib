@@ -40,7 +40,8 @@ extern "C" {
 #elif defined(_MSC_VER)
 #define thread_local __declspec(thread)
 #else
-#define thread_local error
+// Seems to be MinGW extension
+#define thread_local __thread
 #endif
 
 #define ONCE_FLAG_INIT 0
