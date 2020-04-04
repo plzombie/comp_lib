@@ -1,3 +1,3 @@
 # stdnoreturn.h
 
-stdnoreturn.h from C11
+stdnoreturn.h from C11.
