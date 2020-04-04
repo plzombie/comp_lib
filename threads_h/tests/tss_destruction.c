@@ -31,9 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 
 long long sum = 0;
-mtx_t mtx;
 
 int thrd_start(void *val);
+void tss_dtor(void *);
 
 typedef struct {
 	int value;
@@ -41,28 +41,40 @@ typedef struct {
 
 int main(void)
 {
-	thrd_t thr[1000];
-	value_t values[1000];
-	const long long truesum = 500500; // (1+1000)/2*1000 = 1001*500 = 500500
-	size_t i;
+	thrd_t thr;
 	int res;
 
-	if(mtx_init(&mtx, mtx_plain) != thrd_success)
+	if(thrd_create(&thr, thrd_start, 0) != thrd_success)
 		return EXIT_FAILURE;
+
+	if(thrd_join(&thr, &res) != thrd_success)
+		return EXIT_FAILURE;
+
+	return res;
+}
+
+int thrd_start(void *val)
+{
+	size_t i;
+	tss_t tss[1000];
+	value_t values[1000];
+	const long long truesum = 500500; // (1+1000)/2*1000 = 1001*500 = 500500
+
+	(void)val;
+
+	for(i = 0; i < 1000; i++) {
+		if(tss_create(tss+i, tss_dtor) != thrd_success)
+			return EXIT_FAILURE;
+	}
 
 	for(i = 0; i < 1000; i++) {
 		values[i].value = (int)(i+1);
-		if(thrd_create(thr+i, thrd_start, values+i) != thrd_success)
-			exit(EXIT_FAILURE);
+		if(tss_set(tss[i], values+i) != thrd_success)
+			return EXIT_FAILURE;
 	}
 
-	for(i = 0; i < 1000; i++) {
-		thrd_join(thr[i], &res);
-		if(res != (int)(i+1))
-			exit(EXIT_FAILURE);
-	}
-
-	mtx_destroy(&mtx);
+	for(i = 0; i < 1000; i++)
+		tss_delete(tss[i]);
 
 	if(truesum != sum)
 		return EXIT_FAILURE;
@@ -70,12 +82,7 @@ int main(void)
 	return EXIT_SUCCESS;
 }
 
-int thrd_start(void *val)
+void tss_dtor(void *val)
 {
-
-	mtx_lock(&mtx);
 	sum += ((value_t *)val)->value;
-	mtx_unlock(&mtx);
-
-	return ((value_t *)val)->value;
 }
