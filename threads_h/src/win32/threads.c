@@ -3,8 +3,19 @@
 
 #include <Windows.h>
 
-#include <stdlib.h> // exit(EXIT_FAILURE)
+#include <process.h>
+#include <stdlib.h>
 
+static DWORD get_time_in_ms(const struct timespec * ts);
+typedef struct {
+	thrd_start_t thrd_start;
+	void *thrd_arg;
+	uintptr_t handle;
+	int thrd_ret;
+} thread_arg_t;
+unsigned __stdcall thrd_start_wrapper(void *arg);
+
+// Call once
 void call_once(once_flag *flag, void (* func)(void))
 {
 	(void)flag;
@@ -58,54 +69,87 @@ int cnd_wait(cnd_t *cond, mtx_t *mtx)
 // Mutexes
 void mtx_destroy(mtx_t *mtx)
 {
-	(void)mtx;
+	CloseHandle(*mtx);
 }
 
 int mtx_init(mtx_t *mtx, int type)
 {
-	(void)mtx;
-	(void)type;
+	HANDLE h;
 
-	return thrd_error;
+	if(!(type&(mtx_timed|mtx_recursive)))
+		return thrd_error;
+
+	h = CreateMutexW(NULL, FALSE, NULL);
+	if(h == NULL)
+		return thrd_error;
+
+	*mtx = h;
+
+	return thrd_success;
 }
 
 int mtx_lock(mtx_t *mtx)
 {
-	(void)mtx;
+	if(WaitForSingleObject(*mtx, INFINITE) == WAIT_OBJECT_0)
+		return thrd_success;
 
 	return thrd_error;
 }
 
 int mtx_timedlock(mtx_t *restrict mtx, const struct timespec *restrict ts)
 {
-	(void)mtx;
-	(void)ts;
+	DWORD waittime, result;
 
-	return thrd_error;
+	waittime = get_time_in_ms(ts);
+
+	result = WaitForSingleObject(*mtx, waittime);
+
+	if(result == WAIT_OBJECT_0)
+		return thrd_success;
+	else if(result == WAIT_TIMEOUT)
+		return thrd_timedout;
+	else
+		return thrd_error;
 }
 
 int mtx_trylock(mtx_t *mtx)
 {
-	(void)mtx;
+	if(WaitForSingleObject(*mtx, 0) == WAIT_OBJECT_0)
+		return thrd_success;
 
 	return thrd_error;
 }
 
 int mtx_unlock(mtx_t *mtx)
 {
-	(void)mtx;
-
-	return thrd_error;
+	if(ReleaseMutex(*mtx))
+		return thrd_success;
+	else
+		return thrd_error;
 }
 
 // Threads
 int thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 {
-	(void)thr;
-	(void)func;
-	(void)arg;
+	thread_arg_t *thread_arg;
 
-	return thrd_error;
+	thread_arg = malloc(sizeof(thread_arg_t));
+	if(!thread_arg)
+		return thrd_nomem;
+
+	thread_arg->thrd_arg = arg;
+	thread_arg->thrd_start = func;
+	thread_arg->thrd_ret = 0;
+
+	thread_arg->handle = _beginthreadex(NULL, 0, thrd_start_wrapper, thread_arg, 0, NULL);
+	if(thread_arg->handle == 0) {
+		free(thread_arg);
+		return thrd_error;
+	}
+
+	*thr = thread_arg;
+
+	return thrd_success;
 }
 
 thrd_t thrd_current(void)
@@ -141,19 +185,28 @@ void thrd_exit(int res)
 
 int thrd_join(thrd_t thr, int *res)
 {
-	(void)thr;
-	(void)res;
+	thread_arg_t *thread_arg;
 
-	return thrd_error;
+	thread_arg = thr;
+
+	if(WaitForSingleObject((HANDLE)(thread_arg->handle), INFINITE) != WAIT_OBJECT_0)
+		return thrd_error;
+
+	CloseHandle((HANDLE)(thread_arg->handle));
+
+	if(res)
+		*res = thread_arg->thrd_ret;
+
+	free(thread_arg);
+
+	return thrd_success;
 }
 
 int thrd_sleep(const struct timespec *duration, struct timespec *remaining)
 {
-	long long sleeptime;
+	DWORD sleeptime;
 
-	sleeptime = duration->tv_sec*1000+duration->tv_nsec/1000000;
-
-	if(duration->tv_nsec % 1000000) sleeptime++;
+	sleeptime = get_time_in_ms(duration);
 
 	Sleep(sleeptime); // Sleeps at less sleeptime ms
 
@@ -197,4 +250,27 @@ int tss_set(tss_t key, void *val)
 	(void)val;
 
 	return thrd_error;
+}
+
+// Non-library functions
+static DWORD get_time_in_ms(const struct timespec * ts)
+{
+	DWORD mstime;
+
+	mstime = ts->tv_sec*1000+ts->tv_nsec/1000000;
+
+	if(ts->tv_nsec % 1000000) mstime++;
+
+	return mstime;
+}
+
+unsigned __stdcall thrd_start_wrapper(void *arg)
+{
+	thread_arg_t *thread_arg;
+
+	thread_arg = arg;
+
+	thread_arg->thrd_ret = thread_arg->thrd_start(thread_arg->thrd_arg);
+
+	return 0;
 }
