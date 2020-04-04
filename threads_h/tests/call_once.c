@@ -64,8 +64,6 @@ int main(void)
 
 	mtx_destroy(&mtx);
 
-	printf("%lld %lld\n", truesum, sum);
-
 	if(truesum != sum)
 		return EXIT_FAILURE;
 

@@ -56,8 +56,8 @@ static void thrd_release(thread_arg_t *thread_arg);
 // Call once
 void call_once(once_flag *flag, void (* func)(void))
 {
-	(void)flag;
-	(void)func;
+	if(InterlockedCompareExchange((long *)flag, 1, ONCE_FLAG_INIT) == ONCE_FLAG_INIT)
+		func();
 }
 
 // Conditions
