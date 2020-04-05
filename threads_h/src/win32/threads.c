@@ -92,7 +92,7 @@ int cnd_signal(cnd_t *cond)
 	return thrd_error;
 }
 
-int cnd_timedwait(cnd_t *restrict cond, mtx_t *restrict mtx, const struct timespec *restrict ts)
+int cnd_timedwait(cnd_t * __restrict cond, mtx_t * __restrict mtx, const struct timespec * __restrict ts)
 {
 	(void)cond;
 	(void)mtx;
@@ -168,7 +168,7 @@ int mtx_lock(mtx_t *mtx)
 	return thrd_error;
 }
 
-int mtx_timedlock(mtx_t *restrict mtx, const struct timespec *restrict ts)
+int mtx_timedlock(mtx_t * __restrict mtx, const struct timespec * __restrict ts)
 {
 	DWORD waittime, result;
 	mtx_local_t *mtx_local;
