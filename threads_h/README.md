@@ -3,5 +3,5 @@
 threads.h from C11.
 
 Restrictions:
- * mutexes only recursive,
+ * timed mutexes and non-recursive mutexes untested (should work),
  * no conditional variables.
