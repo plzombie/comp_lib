@@ -154,7 +154,13 @@ int mtx_lock(mtx_t *mtx)
 	mtx_local = *mtx;
 
 	if(WaitForSingleObject(mtx_local->h, INFINITE) == WAIT_OBJECT_0) {
-		mtx_local->first_locked = 1;
+		if(mtx_local->first_locked == 0)
+			mtx_local->first_locked = 1;
+		else {
+			ReleaseMutex(mtx_local->h);
+
+			return thrd_error;
+		}
 
 		return thrd_success;
 	}
@@ -177,7 +183,13 @@ int mtx_timedlock(mtx_t *restrict mtx, const struct timespec *restrict ts)
 	result = WaitForSingleObject(mtx_local->h, waittime);
 
 	if(result == WAIT_OBJECT_0) {
-		mtx_local->first_locked = 1;
+		if(mtx_local->first_locked == 0)
+			mtx_local->first_locked = 1;
+		else {
+			ReleaseMutex(mtx_local->h);
+
+			return thrd_error;
+		}
 
 		return thrd_success;
 	} else if(result == WAIT_TIMEOUT)
@@ -193,7 +205,13 @@ int mtx_trylock(mtx_t *mtx)
 	mtx_local = *mtx;
 
 	if(WaitForSingleObject(mtx_local->h, 0) == WAIT_OBJECT_0) {
-		mtx_local->first_locked = 1;
+		if(mtx_local->first_locked == 0)
+			mtx_local->first_locked = 1;
+		else {
+			ReleaseMutex(mtx_local->h);
+
+			return thrd_error;
+		}
 
 		return thrd_success;
 	}
