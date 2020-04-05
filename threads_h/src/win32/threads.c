@@ -153,7 +153,7 @@ int mtx_lock(mtx_t *mtx)
 	if(WaitForSingleObject(mtx_local->h, INFINITE) == WAIT_OBJECT_0) {
 		if(mtx_local->first_locked == 0)
 			mtx_local->first_locked = 1;
-		else {
+		else if(!(mtx_local->type&mtx_recursive)){
 			ReleaseMutex(mtx_local->h);
 
 			return thrd_error;
@@ -182,7 +182,7 @@ int mtx_timedlock(mtx_t * __restrict mtx, const struct timespec * __restrict ts)
 	if(result == WAIT_OBJECT_0) {
 		if(mtx_local->first_locked == 0)
 			mtx_local->first_locked = 1;
-		else {
+		else if(!(mtx_local->type&mtx_recursive)) {
 			ReleaseMutex(mtx_local->h);
 
 			return thrd_error;
@@ -207,7 +207,7 @@ int mtx_trylock(mtx_t *mtx)
 	if(result == WAIT_OBJECT_0) {
 		if(mtx_local->first_locked == 0)
 			mtx_local->first_locked = 1;
-		else {
+		else if(!(mtx_local->type&mtx_recursive)){
 			ReleaseMutex(mtx_local->h);
 
 			return thrd_busy;

@@ -42,7 +42,7 @@ int main(void)
 	size_t i;
 	int res;
 
-	if(mtx_init(&mtx, mtx_recursive | mtx_timed) != thrd_success)
+	if(mtx_init(&mtx, mtx_plain) != thrd_success)
 		return EXIT_FAILURE;
 
 	for(i = 0; i < 1000; i++) {
