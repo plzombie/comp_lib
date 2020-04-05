@@ -73,11 +73,20 @@ int main(void)
 int thrd_start(void *val)
 {
 	tss_t tss;
+	value_t *v;
 
 	if(tss_create(&tss, tss_dtor) != thrd_success)
 		return EXIT_FAILURE;
 
 	if(tss_set(tss, val) != thrd_success)
+		return EXIT_FAILURE;
+
+	v = tss_get(tss);
+
+	if(v->value != ((value_t *)val)->value)
+		return EXIT_FAILURE;
+
+	if(v != ((value_t*)val))
 		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;

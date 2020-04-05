@@ -52,12 +52,13 @@ int main(void)
 
 	return res;
 }
-
+#include <stdio.h>
 int thrd_start(void *val)
 {
 	size_t i;
 	tss_t tss[1000];
 	value_t values[1000];
+	value_t *v;
 	const long long truesum = 500500; // (1+1000)/2*1000 = 1001*500 = 500500
 
 	(void)val;
@@ -70,6 +71,16 @@ int thrd_start(void *val)
 	for(i = 0; i < 1000; i++) {
 		values[i].value = (int)(i+1);
 		if(tss_set(tss[i], values+i) != thrd_success)
+			return EXIT_FAILURE;
+	}
+
+	for (i = 0; i < 1000; i++) {
+		v = tss_get(tss[i]);
+
+		if(v->value != (int)(i + 1))
+			return EXIT_FAILURE;
+
+		if(v != values + i)
 			return EXIT_FAILURE;
 	}
 
