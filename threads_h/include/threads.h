@@ -77,13 +77,13 @@ int cnd_broadcast(cnd_t *cond);
 void cnd_destroy(cnd_t *cond);
 int cnd_init(cnd_t *cond);
 int cnd_signal(cnd_t *cond);
-int cnd_timedwait(cnd_t *restrict cond, mtx_t *restrict mtx, const struct timespec *restrict ts);
+int cnd_timedwait(cnd_t * __restrict cond, mtx_t * __restrict mtx, const struct timespec * __restrict ts);
 int cnd_wait(cnd_t *cond, mtx_t *mtx);
 
 void mtx_destroy(mtx_t *mtx);
 int mtx_init(mtx_t *mtx, int type);
 int mtx_lock(mtx_t *mtx);
-int mtx_timedlock(mtx_t *restrict mtx, const struct timespec *restrict ts);
+int mtx_timedlock(mtx_t * __restrict mtx, const struct timespec * __restrict ts);
 int mtx_trylock(mtx_t *mtx);
 int mtx_unlock(mtx_t *mtx);
 
