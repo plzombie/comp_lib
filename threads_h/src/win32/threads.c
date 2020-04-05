@@ -464,7 +464,7 @@ static DWORD get_time_in_ms(const struct timespec * ts)
 {
 	DWORD mstime;
 
-	mstime = ts->tv_sec*1000+ts->tv_nsec/1000000;
+	mstime = (DWORD)(ts->tv_sec*1000+ts->tv_nsec/1000000);
 
 	if(ts->tv_nsec % 1000000) mstime++;
 
