@@ -53,6 +53,7 @@ typedef struct {
 typedef struct {
 	HANDLE h;
 	int type;
+	int first_locked;
 } mtx_local_t;
 static unsigned __stdcall thrd_start_wrapper(void *arg);
 static void thrd_release(thread_arg_t *thread_arg);
@@ -132,6 +133,7 @@ int mtx_init(mtx_t *mtx, int type)
 		return thrd_error;
 
 	mtx_local->type = type;
+	mtx_local->first_locked = 0;
 
 	mtx_local->h = CreateMutexW(NULL, FALSE, NULL);
 	if(mtx_local->h == NULL) {
@@ -151,8 +153,11 @@ int mtx_lock(mtx_t *mtx)
 
 	mtx_local = *mtx;
 
-	if(WaitForSingleObject(mtx_local->h, INFINITE) == WAIT_OBJECT_0)
+	if(WaitForSingleObject(mtx_local->h, INFINITE) == WAIT_OBJECT_0) {
+		mtx_local->first_locked = 1;
+
 		return thrd_success;
+	}
 
 	return thrd_error;
 }
@@ -171,9 +176,11 @@ int mtx_timedlock(mtx_t *restrict mtx, const struct timespec *restrict ts)
 
 	result = WaitForSingleObject(mtx_local->h, waittime);
 
-	if(result == WAIT_OBJECT_0)
+	if(result == WAIT_OBJECT_0) {
+		mtx_local->first_locked = 1;
+
 		return thrd_success;
-	else if(result == WAIT_TIMEOUT)
+	} else if(result == WAIT_TIMEOUT)
 		return thrd_timedout;
 	else
 		return thrd_error;
@@ -185,8 +192,11 @@ int mtx_trylock(mtx_t *mtx)
 
 	mtx_local = *mtx;
 
-	if(WaitForSingleObject(mtx_local->h, 0) == WAIT_OBJECT_0)
+	if(WaitForSingleObject(mtx_local->h, 0) == WAIT_OBJECT_0) {
+		mtx_local->first_locked = 1;
+
 		return thrd_success;
+	}
 
 	return thrd_error;
 }
@@ -197,9 +207,11 @@ int mtx_unlock(mtx_t *mtx)
 
 	mtx_local = *mtx;
 
-	if(ReleaseMutex(mtx_local->h))
+	if(ReleaseMutex(mtx_local->h)) {
+		mtx_local->first_locked = 0;
+
 		return thrd_success;
-	else
+	} else
 		return thrd_error;
 }
 
