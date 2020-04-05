@@ -125,9 +125,6 @@ int mtx_init(mtx_t *mtx, int type)
 {
 	mtx_local_t *mtx_local;
 
-	if(!(type&(mtx_recursive)))
-		return thrd_error;
-
 	mtx_local = malloc(sizeof(mtx_local_t));
 	if(!mtx_local)
 		return thrd_error;
@@ -201,22 +198,26 @@ int mtx_timedlock(mtx_t * __restrict mtx, const struct timespec * __restrict ts)
 int mtx_trylock(mtx_t *mtx)
 {
 	mtx_local_t *mtx_local;
+	DWORD result;
 
 	mtx_local = *mtx;
 
-	if(WaitForSingleObject(mtx_local->h, 0) == WAIT_OBJECT_0) {
+	result = WaitForSingleObject(mtx_local->h, 0);
+
+	if(result == WAIT_OBJECT_0) {
 		if(mtx_local->first_locked == 0)
 			mtx_local->first_locked = 1;
 		else {
 			ReleaseMutex(mtx_local->h);
 
-			return thrd_error;
+			return thrd_busy;
 		}
 
 		return thrd_success;
-	}
-
-	return thrd_error;
+	} else if(result == WAIT_TIMEOUT)
+		return thrd_busy;
+	else
+		return thrd_error;
 }
 
 int mtx_unlock(mtx_t *mtx)
