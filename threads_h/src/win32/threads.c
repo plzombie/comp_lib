@@ -245,7 +245,17 @@ int thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 		if(thrd_tls_thr_t_index == TLS_OUT_OF_INDEXES)
 			return thrd_error;
 
-		TlsSetValue(thrd_tls_thr_t_index, 0);
+		thread_arg = malloc(sizeof(thread_arg_t));
+		if (!thread_arg) {
+			TlsFree(thrd_tls_thr_t_index);
+			return thrd_nomem;
+		}
+
+		memset(thread_arg, 0, sizeof(thread_arg_t));
+
+		TlsSetValue(thrd_tls_thr_t_index, thread_arg);
+
+		thread_arg = 0;
 	}
 
 	thread_arg = malloc(sizeof(thread_arg_t));
@@ -369,6 +379,7 @@ int tss_create(tss_t *key, tss_dtor_t dtor)
 	for(tss_key = 0; tss_key < thread_arg->tss_vals_max; tss_key++) {
 		if(thread_arg->tss_vals[tss_key].used == 0) {
 			thread_arg->tss_vals[tss_key].used = 1;
+			thread_arg->tss_vals[tss_key].val = 0;
 			thread_arg->tss_vals[tss_key].dtor = dtor;
 			*key = (void *)tss_key;
 
@@ -389,6 +400,7 @@ int tss_create(tss_t *key, tss_dtor_t dtor)
 		new_vals[tss_key].used = 0;
 
 	new_vals[thread_arg->tss_vals_max].used = 1;
+	new_vals[thread_arg->tss_vals_max].val = 0;
 	new_vals[thread_arg->tss_vals_max].dtor = dtor;
 	*key = (void *)(thread_arg->tss_vals_max);
 
