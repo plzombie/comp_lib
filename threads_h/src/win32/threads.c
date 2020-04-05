@@ -50,6 +50,10 @@ typedef struct {
 	int thrd_ret;
 	int detached;
 } thread_arg_t;
+typedef struct {
+	HANDLE h;
+	int type;
+} mtx_local_t;
 static unsigned __stdcall thrd_start_wrapper(void *arg);
 static void thrd_release(thread_arg_t *thread_arg);
 
@@ -107,28 +111,47 @@ int cnd_wait(cnd_t *cond, mtx_t *mtx)
 // Mutexes
 void mtx_destroy(mtx_t *mtx)
 {
-	CloseHandle(*mtx);
+	mtx_local_t *mtx_local;
+
+	mtx_local = *mtx;
+
+	CloseHandle(mtx_local->h);
+
+	free(mtx_local);
 }
 
 int mtx_init(mtx_t *mtx, int type)
 {
-	HANDLE h;
+	mtx_local_t *mtx_local;
 
-	if(!(type&(mtx_timed|mtx_recursive)))
+	if(!(type&(mtx_recursive)))
 		return thrd_error;
 
-	h = CreateMutexW(NULL, FALSE, NULL);
-	if(h == NULL)
+	mtx_local = malloc(sizeof(mtx_local_t));
+	if(!mtx_local)
 		return thrd_error;
 
-	*mtx = h;
+	mtx_local->type = type;
+
+	mtx_local->h = CreateMutexW(NULL, FALSE, NULL);
+	if(mtx_local->h == NULL) {
+		free(mtx_local);
+
+		return thrd_error;
+	}
+
+	*mtx = mtx_local;
 
 	return thrd_success;
 }
 
 int mtx_lock(mtx_t *mtx)
 {
-	if(WaitForSingleObject(*mtx, INFINITE) == WAIT_OBJECT_0)
+	mtx_local_t *mtx_local;
+
+	mtx_local = *mtx;
+
+	if(WaitForSingleObject(mtx_local->h, INFINITE) == WAIT_OBJECT_0)
 		return thrd_success;
 
 	return thrd_error;
@@ -137,10 +160,16 @@ int mtx_lock(mtx_t *mtx)
 int mtx_timedlock(mtx_t *restrict mtx, const struct timespec *restrict ts)
 {
 	DWORD waittime, result;
+	mtx_local_t *mtx_local;
+
+	mtx_local = *mtx;
+
+	if(!(mtx_local->type&mtx_timed))
+		return thrd_error;
 
 	waittime = get_time_in_ms(ts);
 
-	result = WaitForSingleObject(*mtx, waittime);
+	result = WaitForSingleObject(mtx_local->h, waittime);
 
 	if(result == WAIT_OBJECT_0)
 		return thrd_success;
@@ -152,7 +181,11 @@ int mtx_timedlock(mtx_t *restrict mtx, const struct timespec *restrict ts)
 
 int mtx_trylock(mtx_t *mtx)
 {
-	if(WaitForSingleObject(*mtx, 0) == WAIT_OBJECT_0)
+	mtx_local_t *mtx_local;
+
+	mtx_local = *mtx;
+
+	if(WaitForSingleObject(mtx_local->h, 0) == WAIT_OBJECT_0)
 		return thrd_success;
 
 	return thrd_error;
@@ -160,7 +193,11 @@ int mtx_trylock(mtx_t *mtx)
 
 int mtx_unlock(mtx_t *mtx)
 {
-	if(ReleaseMutex(*mtx))
+	mtx_local_t *mtx_local;
+
+	mtx_local = *mtx;
+
+	if(ReleaseMutex(mtx_local->h))
 		return thrd_success;
 	else
 		return thrd_error;
