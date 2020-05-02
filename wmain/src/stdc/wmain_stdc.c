@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <wchar.h>
 
+#include <stdio.h>
+
 int wmain(int argc, wchar_t **argv);
 
 int main(int argc, char **argv)
@@ -39,8 +41,7 @@ int main(int argc, char **argv)
 	size_t argv_len;
 	wchar_t **wstr_argv;
 
-
-	wstr_argv = malloc((argc+1)*sizeof(wchar_t));
+	wstr_argv = malloc((argc+1)*sizeof(wchar_t *));
 	if(!wstr_argv)
 		exit(EXIT_FAILURE);
 

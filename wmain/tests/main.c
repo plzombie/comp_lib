@@ -26,6 +26,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
@@ -33,8 +34,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int wmain(int argc, wchar_t **argv)
 {
 	int i;
+	wchar_t **p;
 
-	for(i = 0; *argv != 0; i++, argv++) {
+	setlocale(LC_ALL, "");
+
+	p = argv;
+
+	for(i = 0; *p != 0; i++, p++) {
 		wprintf(L"%d: \"%ls\"\n", i, argv[i]);
 	}
 
