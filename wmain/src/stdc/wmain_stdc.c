@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 			int j;
 
 			for(j = 0; j < i; j++)
-				free(wstr_argv[i]);
+				free(wstr_argv[j]);
 
 			return EXIT_FAILURE;
 		}
