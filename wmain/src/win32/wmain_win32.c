@@ -58,10 +58,9 @@ int main(int argc, char **argv)
 
 	wstr_argv[wstr_argc] = 0;
 
-	LocalFree(wstr_argv_old);
-
 	retval = wmain(wstr_argc, wstr_argv);
 
+	LocalFree(wstr_argv_old);
 	free(wstr_argv);
 
 	return retval;
