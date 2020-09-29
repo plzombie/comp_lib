@@ -50,6 +50,14 @@ int main(int argc, char **argv)
 	for(i = 0; i < argc; i++) {
 		argv_len = strlen(argv[i]);
 		wstr_argv[i] = malloc((argv_len+1)*sizeof(wchar_t));
+		if(wstr_argv[i] == 0) {
+			int j;
+
+			for(j = 0; j < i; j++)
+				free(wstr_argv[i]);
+
+			return EXIT_FAILURE;
+		}
 		mbstowcs(wstr_argv[i], argv[i], argv_len);
 		wstr_argv[i][argv_len] = 0;
 	}
