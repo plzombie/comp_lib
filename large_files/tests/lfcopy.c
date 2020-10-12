@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <wchar.h>
 #include <errno.h>
+#include <locale.h>
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -47,6 +48,8 @@ int wmain(int argc, wchar_t **argv)
 	char *buffer;
 	file_t infile, outfile;
 	int64_t filelen, filecopied;
+
+	setlocale(LC_CTYPE, "");
 
 	if(argc < 3) {
 		printf("%s", "lfcopy inputfile outputfile [bufsize=32]\n"
