@@ -63,13 +63,13 @@ file_t fileOpenW(const wchar_t *filename, const wchar_t *mode)
 	}
 
 	memset(&mbstate, 0, sizeof(mbstate_t));
-	if(wcsrtombs(cfilename, &filename, filename_len+1, &mbstate) == (size_t)(-1)) {
+	if(wcsrtombs(cfilename, &filename, filename_len*MB_CUR_MAX+1, &mbstate) == (size_t)(-1)) {
 		errno = EINVAL;
 		goto FINAL;
 	}
 
 	memset(&mbstate, 0, sizeof(mbstate_t));
-	if(wcsrtombs(cmode, &mode, mode_len+1, &mbstate) == (size_t)(-1)) {
+	if(wcsrtombs(cmode, &mode, mode_len*MB_CUR_MAX+1, &mbstate) == (size_t)(-1)) {
 		errno = EINVAL;
 		goto FINAL;
 	}
