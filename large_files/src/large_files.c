@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "../include/large_files.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 file_t fileOpenA(const char *filename, const char *mode)
