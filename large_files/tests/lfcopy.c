@@ -32,11 +32,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef WIN32
 #include "../../wmain/src/win32/wmain_win32.c"
 #else
-#include "../../wmain/src/win32/wmain_stdc.c"
+#include "../../wmain/src/stdc/wmain_stdc.c"
 #endif
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include <errno.h>
 
