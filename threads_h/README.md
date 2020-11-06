@@ -3,6 +3,6 @@
 threads.h from C11.
 
 Restrictions:
- * timed mutexes and non-recursive mutexes untested (should work, tests from tinycthread passed),
+ * timed mutexes and non-recursive mutexes untested (tests for timed mutexes from tinycthread unpassed),
  * no conditional variables,
- * thread specific storage works like array, need to rewrite it.
+ * thread specific storage doesnt support destructors.
