@@ -159,6 +159,7 @@ int mtx_lock(mtx_t *mtx)
 			return thrd_error;
 		} else if(mtx_local->nof_locks == SIZE_MAX) {
 			ReleaseMutex(mtx_local->h);
+
 			return thrd_error;
 		} else
 			mtx_local->nof_locks++;
@@ -334,9 +335,15 @@ _Noreturn void thrd_exit(int res)
 void thrd_exit(int res)
 #endif
 {
-	(void)res;
+	thread_arg_t* thread_arg;
 
-	exit(EXIT_FAILURE);
+	thread_arg = thrd_current();
+
+	InterlockedCompareExchange((LONG*)(&(thread_arg->detached)), 1, 0);
+
+	thrd_release(thread_arg);
+
+	_endthreadex(res);
 }
 
 int thrd_join(thrd_t thr, int *res)
@@ -345,6 +352,9 @@ int thrd_join(thrd_t thr, int *res)
 
 	thread_arg = thr;
 
+	if(InterlockedCompareExchange((LONG *)(&(thread_arg->detached)), 1, 1) == 1)
+		return thrd_error;
+
 	if(WaitForSingleObject((HANDLE)(thread_arg->handle), INFINITE) != WAIT_OBJECT_0)
 		return thrd_error;
 
@@ -352,6 +362,8 @@ int thrd_join(thrd_t thr, int *res)
 
 	if(res)
 		*res = thread_arg->thrd_ret;
+
+	InterlockedCompareExchange((LONG*)(&(thread_arg->detached)), 1, 0);
 
 	thrd_release(thread_arg);
 
@@ -518,13 +530,29 @@ static unsigned __stdcall thrd_start_wrapper(void *arg)
 
 static void thrd_release(thread_arg_t *thread_arg)
 {
-	size_t tss_key;
+	size_t tss_key, i;
 
-	for(tss_key = 0; tss_key < thread_arg->tss_vals_max; tss_key++) {
-		if(thread_arg->tss_vals[tss_key].used) {
-			if(thread_arg->tss_vals[tss_key].dtor)
-				thread_arg->tss_vals[tss_key].dtor(thread_arg->tss_vals[tss_key].val);
+	for(i = 0; i < TSS_DTOR_ITERATIONS; i++) {
+		int non_null = 0;
+
+		for(tss_key = 0; tss_key < thread_arg->tss_vals_max; tss_key++) {
+			if(thread_arg->tss_vals[tss_key].used) {
+				if(thread_arg->tss_vals[tss_key].dtor) {
+					if(thread_arg->tss_vals[tss_key].val) {
+						void *old_val;
+
+						old_val = thread_arg->tss_vals[tss_key].val;
+						thread_arg->tss_vals[tss_key].val = 0;
+						non_null = 1;
+
+						thread_arg->tss_vals[tss_key].dtor(old_val);
+					}
+				}
+			}
 		}
+
+		if(!non_null)
+			break;
 	}
 
 	free(thread_arg);
