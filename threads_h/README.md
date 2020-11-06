@@ -3,7 +3,6 @@
 threads.h from C11.
 
 Restrictions:
- * timed mutexes and non-recursive mutexes untested (should work),
+ * timed mutexes and non-recursive mutexes untested (should work, tests from tinycthread passed),
  * no conditional variables,
- * some strange bugs happens (see mtx_plain test or test from tinycthread),
- * thread specific storage must be allocated for every thread (not like in winapi), need to rewrite it.
+ * thread specific storage works like array, need to rewrite it.

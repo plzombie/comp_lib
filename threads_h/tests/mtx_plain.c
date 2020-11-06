@@ -69,14 +69,16 @@ int thrd_start(void *val)
 
 	(void)val;
 
-	for(i = 0; i < 1000; i++) {
-		mtx_lock(&mtx);
+	for(i = 0; i < 10000; i++) {
+		if(mtx_lock(&mtx) != thrd_success)
+			return 1;
 		if(mtx_trylock(&mtx) != thrd_busy)
 			break;
-		mtx_unlock(&mtx);
+		if(mtx_unlock(&mtx) != thrd_success)
+			return 1;
 	}
 
-	if(i != 1000) {
+	if(i != 10000) {
 		mtx_unlock(&mtx);
 
 		return 1;

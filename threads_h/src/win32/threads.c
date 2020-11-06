@@ -53,7 +53,7 @@ typedef struct {
 typedef struct {
 	HANDLE h;
 	int type;
-	int first_locked;
+	size_t nof_locks;
 } mtx_local_t;
 static unsigned __stdcall thrd_start_wrapper(void *arg);
 static void thrd_release(thread_arg_t *thread_arg);
@@ -130,7 +130,7 @@ int mtx_init(mtx_t *mtx, int type)
 		return thrd_error;
 
 	mtx_local->type = type;
-	mtx_local->first_locked = 0;
+	mtx_local->nof_locks = 0;
 
 	mtx_local->h = CreateMutexW(NULL, FALSE, NULL);
 	if(mtx_local->h == NULL) {
@@ -151,13 +151,17 @@ int mtx_lock(mtx_t *mtx)
 	mtx_local = *mtx;
 
 	if(WaitForSingleObject(mtx_local->h, INFINITE) == WAIT_OBJECT_0) {
-		if(mtx_local->first_locked == 0)
-			mtx_local->first_locked = 1;
+		if(mtx_local->nof_locks == 0)
+			mtx_local->nof_locks = 1;
 		else if(!(mtx_local->type&mtx_recursive)){
 			ReleaseMutex(mtx_local->h);
-
+			
 			return thrd_error;
-		}
+		} else if(mtx_local->nof_locks == SIZE_MAX) {
+			ReleaseMutex(mtx_local->h);
+			return thrd_error;
+		} else
+			mtx_local->nof_locks++;
 
 		return thrd_success;
 	}
@@ -180,13 +184,18 @@ int mtx_timedlock(mtx_t * __restrict mtx, const struct timespec * __restrict ts)
 	result = WaitForSingleObject(mtx_local->h, waittime);
 
 	if(result == WAIT_OBJECT_0) {
-		if(mtx_local->first_locked == 0)
-			mtx_local->first_locked = 1;
+		if(mtx_local->nof_locks == 0)
+			mtx_local->nof_locks = 1;
 		else if(!(mtx_local->type&mtx_recursive)) {
 			ReleaseMutex(mtx_local->h);
 
 			return thrd_error;
-		}
+		} else if(mtx_local->nof_locks == SIZE_MAX) {
+			ReleaseMutex(mtx_local->h);
+
+			return thrd_error;
+		} else
+			mtx_local->nof_locks++;
 
 		return thrd_success;
 	} else if(result == WAIT_TIMEOUT)
@@ -205,13 +214,18 @@ int mtx_trylock(mtx_t *mtx)
 	result = WaitForSingleObject(mtx_local->h, 0);
 
 	if(result == WAIT_OBJECT_0) {
-		if(mtx_local->first_locked == 0)
-			mtx_local->first_locked = 1;
+		if(mtx_local->nof_locks == 0)
+			mtx_local->nof_locks = 1;
 		else if(!(mtx_local->type&mtx_recursive)){
 			ReleaseMutex(mtx_local->h);
 
 			return thrd_busy;
-		}
+		} else if(mtx_local->nof_locks == SIZE_MAX) {
+			ReleaseMutex(mtx_local->h);
+
+			return thrd_error;
+		} else
+			mtx_local->nof_locks++;
 
 		return thrd_success;
 	} else if(result == WAIT_TIMEOUT)
@@ -226,12 +240,15 @@ int mtx_unlock(mtx_t *mtx)
 
 	mtx_local = *mtx;
 
-	if(ReleaseMutex(mtx_local->h)) {
-		mtx_local->first_locked = 0;
+	mtx_local->nof_locks--;
 
+	if(ReleaseMutex(mtx_local->h))
 		return thrd_success;
-	} else
+	else {
+		mtx_local->nof_locks++;
+
 		return thrd_error;
+	}
 }
 
 // Threads

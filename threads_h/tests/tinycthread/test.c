@@ -152,7 +152,7 @@ static int thread_lock(void * aArg)
   return 0;
 }
 
-#define TEST_MUTEX_LOCKING_N_THREADS 1 //128
+#define TEST_MUTEX_LOCKING_N_THREADS 128
 
 static void test_mutex_locking(void)
 {
@@ -604,12 +604,12 @@ const Test unit_tests[] =
 #endif
   { "mutex-locking", test_mutex_locking },
   { "mutex-recursive", test_mutex_recursive },
-  { "condition-variables", test_condition_variables },
+  //{ "condition-variables", test_condition_variables },
   { "yield", test_yield },
   { "sleep", test_sleep },
   { "time", test_time },
   { "once", test_once },
-  { "thread-specific-storage", test_tss },
+  //{ "thread-specific-storage", test_tss },
   { "mutex-timed", test_mutex_timed },
   { "thread-exit", test_thrd_exit },
   { NULL, }
