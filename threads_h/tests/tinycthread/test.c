@@ -125,7 +125,6 @@ static int thread_lock(void * aArg)
 {
   int i;
   mtx_t try_mutex;
-  int mtx_trylock_gMutex;
 
   (void)aArg;
 

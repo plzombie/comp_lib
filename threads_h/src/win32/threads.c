@@ -339,9 +339,9 @@ void thrd_exit(int res)
 
 	thread_arg = thrd_current();
 
-	InterlockedCompareExchange((LONG*)(&(thread_arg->detached)), 1, 0);
-
 	thrd_release(thread_arg);
+
+	thread_arg->thrd_ret = res;
 
 	_endthreadex(res);
 }
@@ -367,6 +367,8 @@ int thrd_join(thrd_t thr, int *res)
 
 	thrd_release(thread_arg);
 
+	free(thread_arg);
+
 	return thrd_success;
 }
 
@@ -383,7 +385,7 @@ int thrd_sleep(const struct timespec *duration, struct timespec *remaining)
 		remaining->tv_nsec = 0;
 	}
 
-	return -2;
+	return 0;
 }
 
 void thrd_yield(void)
@@ -522,8 +524,11 @@ static unsigned __stdcall thrd_start_wrapper(void *arg)
 
 	thread_arg->thrd_ret = thread_arg->thrd_start(thread_arg->thrd_arg);
 
-	if(InterlockedCompareExchange((LONG *)(&(thread_arg->detached)), 1, 1) == 1)
+	if(InterlockedCompareExchange((LONG *)(&(thread_arg->detached)), 1, 1) == 1) {
 		thrd_release(thread_arg);
+
+		free(thread_arg);
+	}
 
 	return 0;
 }
@@ -555,5 +560,8 @@ static void thrd_release(thread_arg_t *thread_arg)
 			break;
 	}
 
-	free(thread_arg);
+	if(thread_arg->tss_vals_max) {
+		thread_arg->tss_vals_max = 0;
+		free(thread_arg->tss_vals);
+	}
 }
