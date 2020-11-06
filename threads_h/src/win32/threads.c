@@ -36,14 +36,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static DWORD thrd_tls_thr_t_index = TLS_OUT_OF_INDEXES;
 
 static DWORD get_time_in_ms(const struct timespec * ts);
+
 typedef struct {
 	tss_dtor_t dtor;
 	void *val;
 	int used;
 } tss_val_t;
 typedef struct {
-	tss_val_t *tss_vals;
+	tss_val_t* tss_vals;
 	size_t tss_vals_max;
+	HANDLE mutex;
+} tss_hub_t;
+typedef struct {
+	tss_hub_t tss_hub;
 	thrd_start_t thrd_start;
 	void *thrd_arg;
 	uintptr_t handle;
@@ -284,8 +289,8 @@ int thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 	thread_arg->thrd_start = func;
 	thread_arg->thrd_ret = 0;
 	thread_arg->detached = 0;
-	thread_arg->tss_vals = 0;
-	thread_arg->tss_vals_max = 0;
+	thread_arg->tss_hub.tss_vals = 0;
+	thread_arg->tss_hub.tss_vals_max = 0;
 
 	thread_arg->handle = _beginthreadex(NULL, 0, thrd_start_wrapper, thread_arg, 0, NULL);
 	if(thread_arg->handle == 0) {
@@ -407,36 +412,36 @@ int tss_create(tss_t *key, tss_dtor_t dtor)
 	if(thread_arg == 0)
 		return thrd_error;
 
-	for(tss_key = 0; tss_key < thread_arg->tss_vals_max; tss_key++) {
-		if(thread_arg->tss_vals[tss_key].used == 0) {
-			thread_arg->tss_vals[tss_key].used = 1;
-			thread_arg->tss_vals[tss_key].val = 0;
-			thread_arg->tss_vals[tss_key].dtor = dtor;
+	for(tss_key = 0; tss_key < thread_arg->tss_hub.tss_vals_max; tss_key++) {
+		if(thread_arg->tss_hub.tss_vals[tss_key].used == 0) {
+			thread_arg->tss_hub.tss_vals[tss_key].used = 1;
+			thread_arg->tss_hub.tss_vals[tss_key].val = 0;
+			thread_arg->tss_hub.tss_vals[tss_key].dtor = dtor;
 			*key = (void *)tss_key;
 
 			return thrd_success;
 		}
 	}
 
-	if(!thread_arg->tss_vals_max)
+	if(!thread_arg->tss_hub.tss_vals_max)
 		new_vals_max = 32;
 	else
-		new_vals_max = thread_arg->tss_vals_max * 2;
+		new_vals_max = thread_arg->tss_hub.tss_vals_max * 2;
 
-	new_vals = realloc(thread_arg->tss_vals, new_vals_max*sizeof(tss_val_t));
+	new_vals = realloc(thread_arg->tss_hub.tss_vals, new_vals_max*sizeof(tss_val_t));
 	if(!new_vals)
 		return thrd_error;
 
-	for(tss_key = thread_arg->tss_vals_max; tss_key < new_vals_max; tss_key++)
+	for(tss_key = thread_arg->tss_hub.tss_vals_max; tss_key < new_vals_max; tss_key++)
 		new_vals[tss_key].used = 0;
 
-	new_vals[thread_arg->tss_vals_max].used = 1;
-	new_vals[thread_arg->tss_vals_max].val = 0;
-	new_vals[thread_arg->tss_vals_max].dtor = dtor;
-	*key = (void *)(thread_arg->tss_vals_max);
+	new_vals[thread_arg->tss_hub.tss_vals_max].used = 1;
+	new_vals[thread_arg->tss_hub.tss_vals_max].val = 0;
+	new_vals[thread_arg->tss_hub.tss_vals_max].dtor = dtor;
+	*key = (void *)(thread_arg->tss_hub.tss_vals_max);
 
-	thread_arg->tss_vals = new_vals;
-	thread_arg->tss_vals_max = new_vals_max;
+	thread_arg->tss_hub.tss_vals = new_vals;
+	thread_arg->tss_hub.tss_vals_max = new_vals_max;
 
 	return thrd_success;
 }
@@ -452,11 +457,11 @@ void tss_delete(tss_t key)
 
 	tss_key = (size_t)key;
 
-	if(tss_key < thread_arg->tss_vals_max) {
-		if(thread_arg->tss_vals[tss_key].used) {
-			if(thread_arg->tss_vals[tss_key].dtor)
-				thread_arg->tss_vals[tss_key].dtor(thread_arg->tss_vals[tss_key].val);
-			thread_arg->tss_vals[tss_key].used = 0;
+	if(tss_key < thread_arg->tss_hub.tss_vals_max) {
+		if(thread_arg->tss_hub.tss_vals[tss_key].used) {
+			if(thread_arg->tss_hub.tss_vals[tss_key].dtor)
+				thread_arg->tss_hub.tss_vals[tss_key].dtor(thread_arg->tss_hub.tss_vals[tss_key].val);
+			thread_arg->tss_hub.tss_vals[tss_key].used = 0;
 		}
 	}
 }
@@ -472,9 +477,9 @@ void *tss_get(tss_t key)
 
 	tss_key = (size_t)key;
 
-	if(tss_key < thread_arg->tss_vals_max) {
-		if(thread_arg->tss_vals[tss_key].used)
-			return thread_arg->tss_vals[tss_key].val;
+	if(tss_key < thread_arg->tss_hub.tss_vals_max) {
+		if(thread_arg->tss_hub.tss_vals[tss_key].used)
+			return thread_arg->tss_hub.tss_vals[tss_key].val;
 	}
 
 	return 0;
@@ -491,9 +496,9 @@ int tss_set(tss_t key, void *val)
 
 	tss_key = (size_t)key;
 
-	if(tss_key < thread_arg->tss_vals_max) {
-		if(thread_arg->tss_vals[tss_key].used) {
-			thread_arg->tss_vals[tss_key].val = val;
+	if(tss_key < thread_arg->tss_hub.tss_vals_max) {
+		if(thread_arg->tss_hub.tss_vals[tss_key].used) {
+			thread_arg->tss_hub.tss_vals[tss_key].val = val;
 
 			return thrd_success;
 		}
@@ -540,17 +545,17 @@ static void thrd_release(thread_arg_t *thread_arg)
 	for(i = 0; i < TSS_DTOR_ITERATIONS; i++) {
 		int non_null = 0;
 
-		for(tss_key = 0; tss_key < thread_arg->tss_vals_max; tss_key++) {
-			if(thread_arg->tss_vals[tss_key].used) {
-				if(thread_arg->tss_vals[tss_key].dtor) {
-					if(thread_arg->tss_vals[tss_key].val) {
+		for(tss_key = 0; tss_key < thread_arg->tss_hub.tss_vals_max; tss_key++) {
+			if(thread_arg->tss_hub.tss_vals[tss_key].used) {
+				if(thread_arg->tss_hub.tss_vals[tss_key].dtor) {
+					if(thread_arg->tss_hub.tss_vals[tss_key].val) {
 						void *old_val;
 
-						old_val = thread_arg->tss_vals[tss_key].val;
-						thread_arg->tss_vals[tss_key].val = 0;
+						old_val = thread_arg->tss_hub.tss_vals[tss_key].val;
+						thread_arg->tss_hub.tss_vals[tss_key].val = 0;
 						non_null = 1;
 
-						thread_arg->tss_vals[tss_key].dtor(old_val);
+						thread_arg->tss_hub.tss_vals[tss_key].dtor(old_val);
 					}
 				}
 			}
@@ -560,8 +565,8 @@ static void thrd_release(thread_arg_t *thread_arg)
 			break;
 	}
 
-	if(thread_arg->tss_vals_max) {
-		thread_arg->tss_vals_max = 0;
-		free(thread_arg->tss_vals);
+	if(thread_arg->tss_hub.tss_vals_max) {
+		thread_arg->tss_hub.tss_vals_max = 0;
+		free(thread_arg->tss_hub.tss_vals);
 	}
 }
