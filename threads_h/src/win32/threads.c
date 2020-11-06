@@ -168,13 +168,24 @@ int mtx_timedlock(mtx_t * __restrict mtx, const struct timespec * __restrict ts)
 {
 	DWORD waittime, result;
 	mtx_local_t *mtx_local;
+	struct timespec cur_ts, wait_ts;
 
 	mtx_local = *mtx;
 
 	if(!(mtx_local->type&mtx_timed))
 		return thrd_error;
 
-	waittime = get_time_in_ms(ts);
+	if(!timespec_get(&cur_ts, TIME_UTC))
+		return 0;
+
+	wait_ts.tv_sec = ts->tv_sec-cur_ts.tv_sec;
+	if(ts->tv_nsec < cur_ts.tv_nsec) {
+		wait_ts.tv_sec--;
+		wait_ts.tv_nsec = 1000000000-cur_ts.tv_nsec+ts->tv_nsec;
+	} else
+		wait_ts.tv_nsec = ts->tv_nsec-cur_ts.tv_nsec;
+	
+	waittime = get_time_in_ms(&wait_ts);
 
 	result = WaitForSingleObject(mtx_local->h, waittime);
 
