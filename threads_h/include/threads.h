@@ -46,8 +46,9 @@ extern "C" {
 
 #define ONCE_FLAG_INIT 0
 
-//TODO: What is actually next define for?
-#define TSS_DTOR_ITERATIONS 1
+#define TSS_DTOR_ITERATIONS 10
+
+#define _Thread_local __declspec(thread)
 
 typedef void *cnd_t;
 typedef void *thrd_t;
@@ -96,7 +97,6 @@ _Noreturn void thrd_exit(int res);
 #else
 void thrd_exit(int res);
 #endif
-void thrd_exit(int res);
 int thrd_join(thrd_t thr, int *res);
 int thrd_sleep(const struct timespec *duration, struct timespec *remaining);
 void thrd_yield(void);
