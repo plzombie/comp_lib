@@ -211,12 +211,12 @@ static bool cdirsSetExePath(cdirs_data_t *data)
 	nulla = patha;
 
 	// Find end of path for widechar string
-	slashw = wcsrchr(pathw, L'\\');
+	slashw = wcsrchr(pathw, L'/');
 	if(slashw) {
 #ifdef WIN32
 		wchar_t *bslashw;
 
-		bslashw = wcsrchr(slashw, L'/');
+		bslashw = wcsrchr(slashw, L'\\');
 		if(bslashw)
 			nullw = bslashw;
 		else
@@ -227,12 +227,12 @@ static bool cdirsSetExePath(cdirs_data_t *data)
 	}
 
 	// Find end of path for multibyte string
-	slasha = strrchr(patha, '\\');
+	slasha = strrchr(patha, '/');
 	if(slasha) {
 #ifdef WIN32
 		char *bslasha;
 
-		bslasha = strrchr(slasha, '/');
+		bslasha = strrchr(slasha, '\\');
 		if(bslasha)
 			nulla = bslasha;
 		else
