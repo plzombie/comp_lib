@@ -28,6 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../include/common_dirs.h"
 
+#include <locale.h>
 #include <wchar.h>
 
 int main(int argc, char **argv)
@@ -37,6 +38,8 @@ int main(int argc, char **argv)
 
 	(void)argc;
 	(void)argv;
+
+	setlocale(LC_CTYPE, "");
 
 	if(!cdirsInit(&data)) {
 		wprintf(L"%ls\n", L"error: can't init library");
