@@ -127,7 +127,7 @@ static wchar_t *cdirsGetExeFilenameW(void)
 	if(patha) {
 		size_t len, ret;
 		mbstate_t mbstate;
-		char *after_patha;
+		const char *after_patha;
 
 		len = strlen(patha) + 1;
 
@@ -207,12 +207,11 @@ static bool cdirsSetExePath(cdirs_data_t *data)
 	data->exe_path_w = pathw;
 	data->exe_path_a = patha;
 
-	nullw = pathw;
-	nulla = patha;
-
 	// Find end of path for widechar string
 	slashw = wcsrchr(pathw, L'/');
-	if(slashw) {
+	if(!slashw)
+		slashw = pathw;
+	{
 #ifdef WIN32
 		wchar_t *bslashw;
 
@@ -228,7 +227,9 @@ static bool cdirsSetExePath(cdirs_data_t *data)
 
 	// Find end of path for multibyte string
 	slasha = strrchr(patha, '/');
-	if(slasha) {
+	if(!slasha)
+		slasha = patha;
+	{
 #ifdef WIN32
 		char *bslasha;
 
