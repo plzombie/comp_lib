@@ -43,6 +43,7 @@ static int cdirsGetSysDependentPathId(int pathid);
 static wchar_t *cdirsGetExeFilenameW(void);
 static char *cdirsGetExeFilenameA(void);
 static bool cdirsSetExePath(cdirs_data_t *data);
+static bool cdirsSetHomePaths(cdirs_data_t *data);
 
 bool cdirsInit(cdirs_data_t *data)
 {
@@ -50,6 +51,9 @@ bool cdirsInit(cdirs_data_t *data)
 	data->size = sizeof(cdirs_data_t);
 
 	if(!cdirsSetExePath(data))
+		goto ERROR_STATE;
+
+	if(!cdirsSetHomePaths(data))
 		goto ERROR_STATE;
 
 	return true;
@@ -69,6 +73,26 @@ void cdirsDestroy(cdirs_data_t *data)
 		free(data->exe_path_w);
 	if(data->exe_path_a)
 		free(data->exe_path_a);
+
+	if(data->home_path_w)
+		free(data->home_path_w);
+	if(data->home_path_a)
+		free(data->home_path_a);
+
+	if(data->docs_path_w)
+		free(data->docs_path_w);
+	if(data->docs_path_a)
+		free(data->docs_path_a);
+
+	if(data->pics_path_w)
+		free(data->pics_path_w);
+	if(data->pics_path_a)
+		free(data->pics_path_a);
+
+	if(data->music_path_w)
+		free(data->music_path_w);
+	if(data->music_path_a)
+		free(data->music_path_a);
 
 	memset(data, 0, sizeof(cdirs_data_t));
 }
@@ -265,5 +289,10 @@ static bool cdirsSetExePath(cdirs_data_t *data)
 	*nullw = 0;
 	*nulla = 0;
 
+	return true;
+}
+
+bool cdirsSetHomePaths(cdirs_data_t *data)
+{
 	return true;
 }
