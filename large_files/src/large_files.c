@@ -50,7 +50,6 @@ file_t fileOpenW(const wchar_t *filename, const wchar_t *mode)
 	size_t filename_len, mode_len;
 	char *cfilename = 0, *cmode = 0;
 	file_t f = 0;
-	mbstate_t mbstate;
 
 	filename_len = wcslen(filename);
 	mode_len = wcslen(mode);
@@ -62,14 +61,12 @@ file_t fileOpenW(const wchar_t *filename, const wchar_t *mode)
 		goto FINAL;
 	}
 
-	memset(&mbstate, 0, sizeof(mbstate_t));
-	if(wcsrtombs(cfilename, &filename, filename_len*MB_CUR_MAX+1, &mbstate) == (size_t)(-1)) {
+	if(wcstombs(cfilename, filename, filename_len*MB_CUR_MAX+1) == (size_t)(-1)) {
 		errno = EINVAL;
 		goto FINAL;
 	}
 
-	memset(&mbstate, 0, sizeof(mbstate_t));
-	if(wcsrtombs(cmode, &mode, mode_len*MB_CUR_MAX+1, &mbstate) == (size_t)(-1)) {
+	if(wcstombs(cmode, mode, mode_len*MB_CUR_MAX+1) == (size_t)(-1)) {
 		errno = EINVAL;
 		goto FINAL;
 	}
