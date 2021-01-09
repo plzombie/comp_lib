@@ -116,6 +116,13 @@ char *cdirsGetPathA(cdirs_data_t *data, int pathid)
 // Modifies pathid if it's not available on system and returns it
 static int cdirsGetSysDependentPathId(int pathid)
 {
+	switch(pathid) {
+		case CDIRS_DOCUMENTS_PATH:
+		case CDIRS_PICTURES_PATH:
+		case CDIRS_MUSIC_PATH:
+			return CDIRS_HOME_PATH;
+	}
+
 	return pathid;
 }
 
@@ -142,8 +149,6 @@ static wchar_t *cdirsGetExeFilenameW(void)
 	
 	if(patha) {
 		size_t len, ret;
-		mbstate_t mbstate;
-		const char *after_patha;
 
 		len = strlen(patha) + 1;
 
@@ -154,9 +159,7 @@ static wchar_t *cdirsGetExeFilenameW(void)
 			return 0;
 		}
 
-		memset(&mbstate, 0, sizeof(mbstate_t));
-		after_patha = patha;
-		ret = mbsrtowcs(path, &after_patha, len, &mbstate);
+		ret = mbstowcs(path, patha, len);
 		if(ret == len || ret == (size_t)-1) {
 			free(patha);
 			free(path);
