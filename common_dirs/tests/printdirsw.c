@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 	wprintf(L"Pictures directory: \"%ls\"\n", pics_path ? pics_path : L"NULL");
 
 	music_path = cdirsGetPathW(&data, CDIRS_MUSIC_PATH);
-	wprintf(L"Executable directory: \"%ls\"\n", music_path ? music_path : L"NULL");
+	wprintf(L"Music directory: \"%ls\"\n", music_path ? music_path : L"NULL");
 
 	return 0;
 }

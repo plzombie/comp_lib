@@ -142,13 +142,15 @@ char *cdirsGetPathA(cdirs_data_t *data, int pathid)
 static int cdirsGetSysDependentPathId(int pathid)
 {
 	switch(pathid) {
+#ifndef WIN32
 		case CDIRS_DOCUMENTS_PATH:
 		case CDIRS_PICTURES_PATH:
 		case CDIRS_MUSIC_PATH:
 			return CDIRS_HOME_PATH;
+#endif
+		default:
+			return pathid;
 	}
-
-	return pathid;
 }
 
 static wchar_t *cdirsGetExeFilenameW(void)
@@ -294,30 +296,52 @@ static bool cdirsSetExePath(cdirs_data_t *data)
 }
 
 #ifdef WIN32
-bool cdirsSetHomePaths(cdirs_data_t *data)
+static bool cdirsGetSHFolder(wchar_t **path_w, char **path_a, int csidl)
 {
-	data->home_path_w = malloc(MAX_PATH * sizeof(wchar_t));
-	data->home_path_a = malloc(MAX_PATH);
-	if(!data->home_path_w || !data->home_path_a)
+	*path_w = malloc(MAX_PATH * sizeof(wchar_t));
+	*path_a = malloc(MAX_PATH);
+	if(!*path_w || !*path_a)
 		return false; // pointers will be freed in cdirsDestroy
 
-	if(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, data->home_path_w) != S_OK) {
-		free(data->home_path_w);
-		data->home_path_w = 0;
+	if(SHGetFolderPathW(NULL, csidl, NULL, SHGFP_TYPE_CURRENT, *path_w) != S_OK) {
+		free(*path_w);
+		*path_w = 0;
 	}
 
-	if(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, data->home_path_a) != S_OK) {
-		if(data->home_path_w) {
-			free(data->home_path_w);
-			data->home_path_w = 0;
+	if(SHGetFolderPathA(NULL, csidl, NULL, SHGFP_TYPE_CURRENT, *path_a) != S_OK) {
+		if(*path_w) {
+			free(*path_w);
+			*path_w = 0;
 		}
-		free(data->home_path_a);
+		free(*path_a);
+		*path_a = 0;
 	}
 
 	return true;
 }
+
+static bool cdirsSetHomePaths(cdirs_data_t *data)
+{
+	// Home
+	if(!cdirsGetSHFolder(&data->home_path_w, &data->home_path_a, CSIDL_PROFILE))
+		return false;
+
+	// Documents
+	if(!cdirsGetSHFolder(&data->docs_path_w, &data->docs_path_a, CSIDL_PERSONAL))
+		return false;
+
+	// Pictures
+	if(!cdirsGetSHFolder(&data->pics_path_w, &data->pics_path_a, CSIDL_MYPICTURES))
+		return false;
+
+	// Music
+	if(!cdirsGetSHFolder(&data->music_path_w, &data->music_path_a, CSIDL_MYMUSIC))
+		return false;
+
+	return true;
+}
 #else
-bool cdirsSetHomePaths(cdirs_data_t *data)
+static bool cdirsSetHomePaths(cdirs_data_t *data)
 {
 	return true;
 }
