@@ -113,6 +113,8 @@ wchar_t *cdirsGetPathW(cdirs_data_t *data, int pathid)
 			return data->pics_path_w;
 		case CDIRS_MUSIC_PATH:
 			return data->music_path_w;
+		case CDIRS_VIDEO_PATH:
+			return data->video_path_w;
 		default:
 			return 0;
 	}
@@ -133,6 +135,8 @@ char *cdirsGetPathA(cdirs_data_t *data, int pathid)
 			return data->pics_path_a;
 		case CDIRS_MUSIC_PATH:
 			return data->music_path_a;
+		case CDIRS_VIDEO_PATH:
+			return data->video_path_a;
 		default:
 			return 0;
 	}
@@ -146,6 +150,7 @@ static int cdirsGetSysDependentPathId(int pathid)
 		case CDIRS_DOCUMENTS_PATH:
 		case CDIRS_PICTURES_PATH:
 		case CDIRS_MUSIC_PATH:
+		case CDIRS_VIDEO_PATH:
 			return CDIRS_HOME_PATH;
 #endif
 		default:
@@ -336,6 +341,10 @@ static bool cdirsSetHomePaths(cdirs_data_t *data)
 
 	// Music
 	if(!cdirsGetSHFolder(&data->music_path_w, &data->music_path_a, CSIDL_MYMUSIC))
+		return false;
+
+	// Video
+	if(!cdirsGetSHFolder(&data->video_path_w, &data->video_path_a, CSIDL_MYVIDEO))
 		return false;
 
 	return true;

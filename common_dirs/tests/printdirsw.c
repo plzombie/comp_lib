@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int main(int argc, char **argv)
 {
 	cdirs_data_t data;
-	wchar_t *exe_path, *home_path, *docs_path, *pics_path, *music_path;
+	wchar_t *exe_path, *home_path, *docs_path, *pics_path, *music_path, *video_path;
 
 	(void)argc;
 	(void)argv;
@@ -61,6 +61,9 @@ int main(int argc, char **argv)
 
 	music_path = cdirsGetPathW(&data, CDIRS_MUSIC_PATH);
 	wprintf(L"Music directory: \"%ls\"\n", music_path ? music_path : L"NULL");
+
+	video_path = cdirsGetPathW(&data, CDIRS_VIDEO_PATH);
+	wprintf(L"Video directory: \"%ls\"\n", video_path ? video_path : L"NULL");
 
 	return 0;
 }

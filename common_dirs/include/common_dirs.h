@@ -46,6 +46,8 @@ typedef struct {
 	char *pics_path_a;
 	wchar_t *music_path_w;
 	char *music_path_a;
+	wchar_t *video_path_w;
+	char *video_path_a;
 } cdirs_data_t;
 
 enum {
@@ -53,7 +55,8 @@ enum {
 	CDIRS_HOME_PATH,
 	CDIRS_DOCUMENTS_PATH,
 	CDIRS_PICTURES_PATH,
-	CDIRS_MUSIC_PATH
+	CDIRS_MUSIC_PATH,
+	CDIRS_VIDEO_PATH
 };
 
 bool cdirsInit(cdirs_data_t *data);
