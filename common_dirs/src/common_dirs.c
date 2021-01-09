@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef WIN32
 #include <Windows.h>
+#include <ShlObj.h>
 #else // LINUX
 #include <limits.h>
 #include <unistd.h>
@@ -292,7 +293,32 @@ static bool cdirsSetExePath(cdirs_data_t *data)
 	return true;
 }
 
+#ifdef WIN32
+bool cdirsSetHomePaths(cdirs_data_t *data)
+{
+	data->home_path_w = malloc(MAX_PATH * sizeof(wchar_t));
+	data->home_path_a = malloc(MAX_PATH);
+	if(!data->home_path_w || !data->home_path_a)
+		return false; // pointers will be freed in cdirsDestroy
+
+	if(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, data->home_path_w) != S_OK) {
+		free(data->home_path_w);
+		data->home_path_w = 0;
+	}
+
+	if(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, data->home_path_a) != S_OK) {
+		if(data->home_path_w) {
+			free(data->home_path_w);
+			data->home_path_w = 0;
+		}
+		free(data->home_path_a);
+	}
+
+	return true;
+}
+#else
 bool cdirsSetHomePaths(cdirs_data_t *data)
 {
 	return true;
 }
+#endif
