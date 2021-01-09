@@ -80,6 +80,14 @@ wchar_t *cdirsGetPathW(cdirs_data_t *data, int pathid)
 	switch(pathid) {
 		case CDIRS_EXE_PATH:
 			return data->exe_path_w;
+		case CDIRS_HOME_PATH:
+			return data->home_path_w;
+		case CDIRS_DOCUMENTS_PATH:
+			return data->docs_path_w;
+		case CDIRS_PICTURES_PATH:
+			return data->pics_path_w;
+		case CDIRS_MUSIC_PATH:
+			return data->music_path_w;
 		default:
 			return 0;
 	}
@@ -92,6 +100,14 @@ char *cdirsGetPathA(cdirs_data_t *data, int pathid)
 	switch(pathid) {
 		case CDIRS_EXE_PATH:
 			return data->exe_path_a;
+		case CDIRS_HOME_PATH:
+			return data->home_path_a;
+		case CDIRS_DOCUMENTS_PATH:
+			return data->docs_path_a;
+		case CDIRS_PICTURES_PATH:
+			return data->pics_path_a;
+		case CDIRS_MUSIC_PATH:
+			return data->music_path_a;
 		default:
 			return 0;
 	}

@@ -38,10 +38,22 @@ typedef struct {
 	size_t size;
 	wchar_t *exe_path_w;
 	char *exe_path_a;
+	wchar_t *home_path_w;
+	char *home_path_a;
+	wchar_t *docs_path_w;
+	char *docs_path_a;
+	wchar_t *pics_path_w;
+	char *pics_path_a;
+	wchar_t *music_path_w;
+	char *music_path_a;
 } cdirs_data_t;
 
 enum {
-	CDIRS_EXE_PATH
+	CDIRS_EXE_PATH,
+	CDIRS_HOME_PATH,
+	CDIRS_DOCUMENTS_PATH,
+	CDIRS_PICTURES_PATH,
+	CDIRS_MUSIC_PATH
 };
 
 bool cdirsInit(cdirs_data_t *data);
