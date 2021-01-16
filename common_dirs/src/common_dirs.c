@@ -352,6 +352,22 @@ static bool cdirsSetHomePaths(cdirs_data_t *data)
 #else
 static bool cdirsSetHomePaths(cdirs_data_t *data)
 {
+	char *home_a;
+	size_t home_a_len;
+	
+	home_a = getenv("HOME");
+	if(!home_a)
+		return false;
+
+	home_a_len = strlen(home_a) + 1;
+	data->home_path_a = malloc(home_a_len);
+	data->home_path_w = malloc(home_a_len * sizeof(wchar_t));
+	if(!data->home_path_a || !data->home_path_w) return false;
+
+	memcpy(data->home_path_a, home_a, home_a_len);
+
+	mbstowcs(data->home_path_w, data->home_path_a, home_a_len);
+
 	return true;
 }
 #endif
