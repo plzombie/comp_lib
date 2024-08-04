@@ -54,6 +54,11 @@ file_t fileOpenW(const wchar_t *filename, const wchar_t *mode)
 	filename_len = wcslen(filename);
 	mode_len = wcslen(mode);
 
+	if(SIZE_MAX/MB_CUR_MAX <= filename_len || SIZE_MAX/MB_CUR_MAX <= mode_len) {
+		errno = ENAMETOOLONG;
+		return 0;
+	}
+
 	cfilename = malloc(filename_len*MB_CUR_MAX+1);
 	cmode = malloc(mode_len*MB_CUR_MAX+1);
 	if(!cfilename || !cmode) {
